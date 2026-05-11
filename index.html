@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+  <head>
+    <title>HRCU AGM Raffle Wheel</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>🎉 HRCU AGM Raffle Wheel</h1>
+
+      <input type="file" id="excelFile" accept=".xlsx,.xls" />
+
+      <button onclick="toggleFullscreen()">Fullscreen</button>
+
+      <canvas id="wheel" width="800" height="800"></canvas>
+
+      <button id="spinBtn">SPIN</button>
+      <button onclick="removeWinner()" id="removeBtn">Remove Winner</button>
+
+      <div id="winner"></div>
+    </div>
+
+    <audio id="spinSound" src="spin.mp3"></audio>
+    <audio id="winSound" src="win.mp3"></audio>
+
+    <script src="xlsx.full.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
