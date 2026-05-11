@@ -2,11 +2,18 @@ const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 
 const spinBtn = document.getElementById("spinBtn");
-const winnerDiv = document.getElementById("winner");
 const excelFile = document.getElementById("excelFile");
+const winnerModal = document.getElementById("winnerModal");
+const modalWinnerName = document.getElementById("modalWinnerName");
+const modalRemoveBtn = document.getElementById("modalRemoveBtn");
+const closeModalBtn = document.getElementById("closeModalBtn");
 
 let participants = [];
 let lastWinner = null;
+
+let workbook = null;
+let worksheet = null;
+let excelData = [];
 
 let angle = 0;
 let spinning = false;
@@ -34,29 +41,38 @@ const MAX_VISIBLE_SLICES = 300;
 ----------------------------*/
 excelFile.onchange = (e) => {
   const file = e.target.files[0];
+
   const reader = new FileReader();
 
   reader.onload = (event) => {
     const data = new Uint8Array(event.target.result);
 
-    const wb = XLSX.read(data, {
+    workbook = XLSX.read(data, {
       type: "array",
     });
 
-    const sheet = wb.Sheets[wb.SheetNames[0]];
+    worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-    const json = XLSX.utils.sheet_to_json(sheet, {
+    excelData = XLSX.utils.sheet_to_json(worksheet, {
       header: 1,
     });
 
-    participants = json
-      .filter((r) => r.length > 0 && r[0])
-      .map((r) => ({
-        name: String(r[0]),
-        weight: r[1] ? Number(r[1]) : 1,
+    // Skip header row
+    participants = excelData
+      .slice(1)
+      .filter((r) => r.length > 0 && r[1])
+      .map((r, index) => ({
+        rowIndex: index + 1,
+        id: r[0],
+        name: String(r[1]),
+        passbook: r[2],
+        contact: r[3],
+        raffle: r[4],
+        winner: r[5],
+        weight: 1,
       }));
 
-    totalWeight = participants.reduce((a, b) => a + b.weight, 0);
+    totalWeight = participants.length;
 
     drawWheel();
   };
@@ -181,12 +197,10 @@ spinBtn.onclick = () => {
 
   spinning = true;
 
-  winnerDiv.textContent = "";
-
   // pick REAL winner first
   pickWinnerInternal();
 
-  let duration = 5500;
+  let duration = 9500;
 
   let start = performance.now();
 
@@ -198,6 +212,7 @@ spinBtn.onclick = () => {
     let ease = 1 - Math.pow(1 - progress, 4);
 
     angle = (extraRotation * ease * Math.PI) / 180;
+    canvas.style.filter = progress < 1 ? "blur(1px)" : "blur(0px)";
 
     drawWheel();
 
@@ -206,7 +221,9 @@ spinBtn.onclick = () => {
     } else {
       spinning = false;
 
-      winnerDiv.textContent = "🏆 Winner: " + lastWinner.name;
+      showWinnerModal(lastWinner.name);
+
+      markWinnerInExcel(lastWinner);
 
       drawWheel(true);
 
@@ -245,11 +262,49 @@ function removeWinner() {
 
   totalWeight = participants.reduce((a, b) => a + b.weight, 0);
 
-  winnerDiv.textContent = "✔ Winner removed";
-
   lastWinner = null;
 
   drawWheel();
+}
+
+function markWinnerInExcel(winner) {
+  // Winner column = column E
+  const winnerCell = "E" + (winner.rowIndex + 1);
+
+  const timestamp = new Date().toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  worksheet[winnerCell] = {
+    t: "s",
+    v: timestamp,
+  };
+}
+
+function downloadUpdatedExcel() {
+  const updatedWorkbook = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+
+  const blob = new Blob([updatedWorkbook], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  const link = document.createElement("a");
+
+  link.href = URL.createObjectURL(blob);
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+
+  link.download = `HRCU_AGM_Raffle_Results_${timestamp}.xlsx`;
+
+  link.click();
 }
 
 /* ---------------------------
@@ -308,3 +363,39 @@ function toggleFullscreen() {
    INIT
 ----------------------------*/
 drawWheel();
+
+/* ---------------------------
+   SHOW WINNER MODAL
+----------------------------*/
+function showWinnerModal(name) {
+  modalWinnerName.textContent = name;
+
+  winnerModal.classList.add("show");
+}
+
+/* ---------------------------
+   CLOSE MODAL
+----------------------------*/
+function closeWinnerModal() {
+  winnerModal.classList.remove("show");
+}
+
+/* ---------------------------
+   MODAL EVENTS
+----------------------------*/
+closeModalBtn.onclick = closeWinnerModal;
+
+winnerModal.onclick = (e) => {
+  if (e.target === winnerModal) {
+    closeWinnerModal();
+  }
+};
+
+/* ---------------------------
+   REMOVE WINNER FROM MODAL
+----------------------------*/
+modalRemoveBtn.onclick = () => {
+  removeWinner();
+
+  closeWinnerModal();
+};
