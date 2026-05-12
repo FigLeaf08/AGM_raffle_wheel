@@ -7,6 +7,8 @@ const winnerModal = document.getElementById("winnerModal");
 const modalWinnerName = document.getElementById("modalWinnerName");
 const modalRemoveBtn = document.getElementById("modalRemoveBtn");
 const closeModalBtn = document.getElementById("closeModalBtn");
+const spinSound = document.getElementById("spinSound");
+const winSound = document.getElementById("winSound");
 
 let participants = [];
 let lastWinner = null;
@@ -197,10 +199,14 @@ spinBtn.onclick = () => {
 
   spinning = true;
 
+  spinSound.loop = true;
+  spinSound.currentTime = 0;
+  spinSound.play();
+
   // pick REAL winner first
   pickWinnerInternal();
 
-  let duration = 9500;
+  let duration = 16000;
 
   let start = performance.now();
 
@@ -220,6 +226,8 @@ spinBtn.onclick = () => {
       requestAnimationFrame(animate);
     } else {
       spinning = false;
+      spinSound.pause();
+      spinSound.currentTime = 0;
 
       showWinnerModal(lastWinner.name);
 
@@ -369,6 +377,9 @@ drawWheel();
 ----------------------------*/
 function showWinnerModal(name) {
   modalWinnerName.textContent = name;
+
+  winSound.currentTime = 0;
+  winSound.play();
 
   winnerModal.classList.add("show");
 }
