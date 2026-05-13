@@ -36,7 +36,7 @@ const colors = [
   "#14b8a6",
 ];
 
-const MAX_VISIBLE_SLICES = 300;
+const MAX_VISIBLE_SLICES = 400;
 
 /* ---------------------------
    EXCEL IMPORT
@@ -176,7 +176,7 @@ function drawWheel(highlightWinner = false) {
   ctx.fill();
 
   // POINTER (DOWNWARD)
-  ctx.fillStyle = "#facc15";
+  ctx.fillStyle = "#ff0022";
 
   ctx.beginPath();
 
@@ -199,14 +199,14 @@ spinBtn.onclick = () => {
 
   spinning = true;
 
-  spinSound.loop = true;
+  //spinSound.loop = true;
   spinSound.currentTime = 0;
   spinSound.play();
 
   // pick REAL winner first
   pickWinnerInternal();
 
-  let duration = 16000;
+  let duration = 16700;
 
   let start = performance.now();
 
@@ -319,41 +319,119 @@ function downloadUpdatedExcel() {
    CONFETTI
 ----------------------------*/
 function launchConfetti() {
-  for (let i = 0; i < 80; i++) {
-    const c = document.createElement("div");
+  const confettiCount = 260;
 
-    c.style.position = "fixed";
-
-    c.style.left = Math.random() * 100 + "vw";
-
-    c.style.top = "0";
-
-    c.style.width = "6px";
-
-    c.style.height = "6px";
-
-    c.style.background = colors[Math.floor(Math.random() * colors.length)];
-
-    c.style.zIndex = 9999;
-
-    document.body.appendChild(c);
-
-    let duration = Math.random() * 2000 + 2000;
-
-    c.animate(
-      [
-        {
-          transform: "translateY(0)",
-        },
-        {
-          transform: "translateY(100vh)",
-        },
-      ],
-      { duration },
-    );
-
-    setTimeout(() => c.remove(), duration);
+  for (let i = 0; i < confettiCount; i++) {
+    createConfettiPiece();
   }
+}
+
+function createConfettiPiece() {
+  const confetti = document.createElement("div");
+
+  const size = Math.random() * 12 + 5;
+
+  const shapes = ["50%", "0%", "30%"];
+
+  const confettiColors = [
+    "#FFD700",
+    "#FFC107",
+    "#FFEB3B",
+    "#ffffff",
+    "#f59e0b",
+    "#ef4444",
+    "#3b82f6",
+  ];
+
+  const fromLeft = Math.random() > 0.5;
+
+  confetti.style.position = "fixed";
+
+  confetti.style.width = `${size}px`;
+  confetti.style.height = `${size}px`;
+
+  confetti.style.background =
+    confettiColors[Math.floor(Math.random() * confettiColors.length)];
+
+  // START POSITION
+  confetti.style.left = fromLeft ? "-20px" : `${window.innerWidth + 20}px`;
+
+  confetti.style.top = `${window.innerHeight * 0.65}px`;
+
+  confetti.style.borderRadius =
+    shapes[Math.floor(Math.random() * shapes.length)];
+
+  confetti.style.pointerEvents = "none";
+
+  confetti.style.zIndex = "999999";
+
+  confetti.style.boxShadow = "0 0 10px rgba(255,255,255,0.4)";
+
+  document.body.appendChild(confetti);
+
+  // CANNON DIRECTION
+  const x = fromLeft
+    ? Math.random() * 1200 + 600
+    : -(Math.random() * 1200 + 600);
+
+  // SHOOT UPWARD
+  const y = -(Math.random() * 700 + 300);
+
+  // SPIN
+  const rotate = Math.random() * 1440;
+
+  // TIMING
+  const duration = Math.random() * 6000 + 5000;
+
+  // WIND EFFECT
+  const drift = Math.random() * 300 - 150;
+
+  confetti.animate(
+    [
+      {
+        transform: `
+          translate(0px, 0px)
+          rotate(0deg)
+          scale(1)
+        `,
+        opacity: 1,
+      },
+
+      {
+        transform: `
+          translate(${x}px, ${y}px)
+          rotate(${rotate}deg)
+          scale(0.3)
+        `,
+        opacity: 1,
+        offset: 0.6,
+      },
+
+      {
+        transform: `
+          translate(
+              ${
+                fromLeft
+                  ? window.innerWidth + 400 + drift
+                  : -(window.innerWidth + 400) + drift
+              }px
+          )
+          rotate(${rotate * 2}deg)
+          scale(0.2)
+        `,
+        opacity: 0,
+      },
+    ],
+    {
+      duration,
+      easing: "ease-out",
+      fill: "forwards",
+    },
+  );
+
+  setTimeout(() => {
+    confetti.remove();
+  }, duration);
 }
 
 /* ---------------------------
